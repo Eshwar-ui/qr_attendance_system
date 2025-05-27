@@ -31,6 +31,17 @@ class FirebaseAuthProvider with ChangeNotifier {
       _errorMessage = null;
     } on FirebaseAuthException catch (e) {
       _errorMessage = _mapFirebaseError(e);
+      // Show snackbar with error message
+      if (e.code == 'wrong-password' || e.code == 'user-not-found') {
+        ScaffoldMessenger.of(
+          _firebaseAuth.app.toString() as BuildContext,
+        ).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? 'Authentication failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       _setLoading(false);
     }

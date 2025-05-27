@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_attendance_system/features/authentication/firabse_auth_servise.dart';
 import 'package:qr_attendance_system/firebase_options.dart';
+import 'package:qr_attendance_system/screens/admin/admin_dashboard.dart';
 import 'package:qr_attendance_system/screens/auth/login_screen.dart';
-import 'package:qr_attendance_system/screens/auth/signin_screen.dart';
-import 'package:qr_attendance_system/screens/faculty/facilty_dashboard.dart';
+import 'package:qr_attendance_system/screens/faculty/faculty_dashboard.dart';
 import 'package:qr_attendance_system/screens/student/student_dashboard.dart';
 
 void main() async {
@@ -36,8 +36,11 @@ class MyApp extends StatelessWidget {
       home: LoginScreen(),
       routes: {
         '/login': (context) => LoginScreen(),
-        '/facultyDashboard': (context) => FacultyDashboard(),
         '/studentDashboard': (context) => StudentDashboard(),
+        '/adminDashboard': (context) => AdminDashboard(),
+        '/facultyDashboard': (context) => FacultyDashboard(facultyId: ''),
+        '/facultyManagement': (context) => const FacultyManagement(),
+        '/studentManagement': (context) => const StudentManagement(),
       },
     );
   }

@@ -1,6 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_attendance_system/screens/faculty/faculty_dashboard.dart';
 
 class FacultyRegisterScreen extends StatefulWidget {
   const FacultyRegisterScreen({super.key});
@@ -15,7 +18,6 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
   final nameController = TextEditingController();
   final staffIdController = TextEditingController();
   final phoneController = TextEditingController();
-  final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final regCodeController = TextEditingController();
@@ -35,6 +37,10 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
     const allowedRegCode = "TEACHER2024"; // ✅ Hardcoded valid registration code
 
     final enteredRegCode = regCodeController.text.trim();
+    final facultyName = nameController.text.trim();
+    // Generate email from faculty name
+    final email =
+        "${facultyName.toLowerCase().replaceAll(' ', '')}@teacher.com";
 
     if (enteredRegCode != allowedRegCode) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +54,7 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-            email: emailController.text.trim(),
+            email: email,
             password: passwordController.text.trim(),
           );
 
@@ -57,15 +63,21 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
           .doc(credential.user!.uid)
           .set({
             'uid': credential.user!.uid,
-            'name': nameController.text.trim(),
+            'name': facultyName,
             'staffId': staffIdController.text.trim(),
             'phone': phoneController.text.trim(),
-            'email': emailController.text.trim(),
+            'email': email,
             'regCode': enteredRegCode,
             'createdAt': FieldValue.serverTimestamp(),
           });
 
-      Navigator.pushReplacementNamed(context, '/facultyDashboard');
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) =>
+      //         FacultyDashboard(facultyId: credential.user!.uid),
+      //   ),
+      // );
 
       ScaffoldMessenger.of(
         context,
@@ -133,12 +145,6 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
                   keyboardType: TextInputType.phone,
                 ),
                 _buildInputField(
-                  emailController,
-                  "Email ID",
-                  Icons.email,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                _buildInputField(
                   passwordController,
                   "Create Password",
                   Icons.lock,
@@ -172,24 +178,24 @@ class _FacultyRegisterScreenState extends State<FacultyRegisterScreen> {
                 ),
 
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/login'),
-                  child: const Text.rich(
-                    TextSpan(
-                      text: "Already registered? ",
-                      children: [
-                        TextSpan(
-                          text: "Login now",
-                          style: TextStyle(
-                            color: Colors.purple,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // TextButton(
+                //   onPressed: () =>
+                //       Navigator.pushReplacementNamed(context, '/login'),
+                //   child: const Text.rich(
+                //     TextSpan(
+                //       text: "Already registered? ",
+                //       children: [
+                //         TextSpan(
+                //           text: "Login now",
+                //           style: TextStyle(
+                //             color: Colors.purple,
+                //             fontWeight: FontWeight.bold,
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
