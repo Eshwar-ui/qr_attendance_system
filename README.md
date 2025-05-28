@@ -111,7 +111,7 @@ lib/
 
    ```bash
    # Clone the repository
-   git clone [repository-url]
+   git clone https://github.com/Eshwar-ui/qr_attendance_system.git
 
    # Navigate to project directory
    cd qr_attendance_system
