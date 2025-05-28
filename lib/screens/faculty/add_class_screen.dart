@@ -3,13 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_attendance_system/data/model.dart';
+import 'package:qr_attendance_system/features/authentication/firabse_auth_servise.dart';
 import 'package:uuid/uuid.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:provider/provider.dart';
 
 class AddClassScreen extends StatefulWidget {
-  final String facultyId;
-
-  const AddClassScreen({super.key, required this.facultyId});
+  const AddClassScreen({super.key});
 
   @override
   State<AddClassScreen> createState() => _AddClassScreenState();
@@ -23,6 +23,34 @@ class _AddClassScreenState extends State<AddClassScreen> {
 
   DateTime _startTime = DateTime.now();
   DateTime _endTime = DateTime.now().add(const Duration(hours: 1));
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startTime,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        // Keep the same time but update the date
+        _startTime = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _startTime.hour,
+          _startTime.minute,
+        );
+        _endTime = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _endTime.hour,
+          _endTime.minute,
+        );
+      });
+    }
+  }
 
   Future<void> _selectStartTime() async {
     final TimeOfDay? picked = await showTimePicker(
@@ -76,6 +104,10 @@ class _AddClassScreenState extends State<AddClassScreen> {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _createClass() async {
     if (_isLoading) return; // Prevent double submission
     if (!_formKey.currentState!.validate()) return;
@@ -92,14 +124,21 @@ class _AddClassScreenState extends State<AddClassScreen> {
     });
 
     try {
-      // Get faculty name from Firestore
+      // Get faculty name from Firestore using Provider
+      final authProvider = Provider.of<FirebaseAuthProvider>(
+        context,
+        listen: false,
+      );
       final facultyDoc = await FirebaseFirestore.instance
           .collection('faculty')
-          .doc(widget.facultyId)
+          .doc(authProvider.user?.uid)
           .get();
 
-      final facultyName =
-          facultyDoc.data()?['name'] as String? ?? 'Unknown Faculty';
+      final facultyName = facultyDoc.data()?['name'] as String?;
+      if (facultyName == null) {
+        throw Exception('Faculty name not found');
+      }
+
       final classId = const Uuid().v4();
 
       final newClass = ClassModel(
@@ -128,6 +167,7 @@ class _AddClassScreenState extends State<AddClassScreen> {
         const SnackBar(content: Text("Class created and QR generated")),
       );
     } catch (e) {
+      print('Error creating class: $e'); // Add debug print
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error creating class: $e")));
@@ -172,6 +212,12 @@ class _AddClassScreenState extends State<AddClassScreen> {
                           value!.isEmpty ? "Enter subject" : null,
                     ),
                     const SizedBox(height: 24),
+                    ListTile(
+                      title: const Text("Date"),
+                      subtitle: Text(_formatDate(_startTime)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: _isLoading ? null : _selectDate,
+                    ),
                     Row(
                       children: [
                         Expanded(

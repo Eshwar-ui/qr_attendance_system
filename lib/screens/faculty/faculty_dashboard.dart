@@ -10,6 +10,7 @@ import 'package:qr_attendance_system/screens/faculty/add_class_screen.dart';
 import 'package:qr_attendance_system/screens/faculty/class_attendance_screen.dart';
 import 'package:qr_attendance_system/data/model.dart';
 import 'package:qr_attendance_system/screens/auth/login_screen.dart';
+import 'package:qr_attendance_system/data/classes_provider.dart';
 
 class FacultyDashboard extends StatefulWidget {
   final String? facultyId;
@@ -22,13 +23,8 @@ class FacultyDashboard extends StatefulWidget {
 class _FacultyDashboardState extends State<FacultyDashboard>
     with WidgetsBindingObserver {
   int currentIndex = 0;
-  StreamSubscription<QuerySnapshot>? _classesSubscription;
-  List<ClassModel> _classes = [];
-  bool _isLoading = true;
-  String? _error;
-  String? _facultyId;
-  Timer? _refreshTimer;
   bool _isDisposed = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -42,7 +38,6 @@ class _FacultyDashboardState extends State<FacultyDashboard>
   void dispose() {
     _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    _classesSubscription?.cancel();
     _refreshTimer?.cancel();
     super.dispose();
   }
@@ -58,30 +53,27 @@ class _FacultyDashboardState extends State<FacultyDashboard>
     if (_isDisposed || !mounted) return;
 
     try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      await Future.delayed(
-        const Duration(milliseconds: 100),
-      ); // Give time for widget to fully mount
-
-      if (!mounted) return;
-
       final authProvider = Provider.of<FirebaseAuthProvider>(
         context,
         listen: false,
       );
 
-      _facultyId = widget.facultyId ?? authProvider.user?.uid;
+      final facultyDoc = await FirebaseFirestore.instance
+          .collection('faculty')
+          .doc(authProvider.user?.uid)
+          .get();
 
-      if (_facultyId == null || _facultyId!.isEmpty) {
+      final facultyName = facultyDoc.data()?['name'] as String?;
+
+      if (facultyName == null || facultyName.isEmpty) {
         if (mounted) {
-          setState(() {
-            _error = 'Unable to identify faculty. Please try logging in again.';
-            _isLoading = false;
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Unable to identify faculty. Please try logging in again.',
+              ),
+            ),
+          );
         }
         return;
       }
@@ -95,15 +87,18 @@ class _FacultyDashboardState extends State<FacultyDashboard>
       });
 
       if (mounted) {
-        _subscribeToClasses();
+        final classesProvider = Provider.of<ClassesProvider>(
+          context,
+          listen: false,
+        );
+        await classesProvider.fetchUserClasses(facultyName);
       }
     } catch (e) {
       print('Initialization error: $e');
       if (!_isDisposed && mounted) {
-        setState(() {
-          _error = 'Failed to initialize. Please try again.';
-          _isLoading = false;
-        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to initialize: $e')));
       }
     }
   }
@@ -111,97 +106,31 @@ class _FacultyDashboardState extends State<FacultyDashboard>
   void _refreshClasses() {
     if (_isDisposed || !mounted) return;
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    // Add slight delay to prevent rapid refreshes
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!_isDisposed) {
-        _subscribeToClasses();
-      }
-    });
-  }
-
-  void _subscribeToClasses() {
-    if (_isDisposed || !mounted) return;
-
-    try {
-      _classesSubscription?.cancel();
-
-      if (_facultyId == null || _facultyId!.isEmpty) {
-        setState(() {
-          _error = 'Unable to identify faculty. Please try logging in again.';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Query classes created by this faculty
-      final query = FirebaseFirestore.instance
-          .collection('classes')
-          .where('createdBy', isEqualTo: _facultyId)
-          .orderBy('createdAt', descending: true);
-
-      _classesSubscription = query.snapshots().listen(
-        (snapshot) {
-          if (_isDisposed || !mounted) return;
-
-          try {
-            final classes = snapshot.docs.map((doc) {
-              final data = doc.data();
-              return ClassModel.fromMap(data, doc.id);
-            }).toList();
-
-            if (mounted) {
-              setState(() {
-                _classes = classes;
-                _isLoading = false;
-                _error = null;
-              });
-            }
-          } catch (e) {
-            print('Error processing classes: $e');
-            if (mounted) {
-              setState(() {
-                _error = 'Error loading class data. Please try again.';
-                _isLoading = false;
-              });
-            }
+    final authProvider = Provider.of<FirebaseAuthProvider>(
+      context,
+      listen: false,
+    );
+    FirebaseFirestore.instance
+        .collection('faculty')
+        .doc(authProvider.user?.uid)
+        .get()
+        .then((facultyDoc) {
+          final facultyName = facultyDoc.data()?['name'] as String?;
+          if (facultyName != null && mounted) {
+            final classesProvider = Provider.of<ClassesProvider>(
+              context,
+              listen: false,
+            );
+            classesProvider.fetchUserClasses(facultyName);
           }
-        },
-        onError: (error) {
-          print('Firestore subscription error: $error');
-          if (_isDisposed || !mounted) return;
-
-          String errorMessage;
-          if (error.toString().contains('permission-denied')) {
-            errorMessage = 'Access denied. Please verify your credentials.';
-          } else if (error.toString().contains('unavailable')) {
-            errorMessage = 'Network error. Please check your connection.';
-          } else {
-            errorMessage = 'Failed to load classes. Please try again.';
-          }
-
+        })
+        .catchError((error) {
           if (mounted) {
-            setState(() {
-              _error = errorMessage;
-              _isLoading = false;
-            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to refresh classes: $error')),
+            );
           }
-        },
-        cancelOnError: true,
-      );
-    } catch (e) {
-      print('Subscription setup error: $e');
-      if (_isDisposed || !mounted) return;
-
-      setState(() {
-        _error = 'Failed to load classes. Please try again.';
-        _isLoading = false;
-      });
-    }
+        });
   }
 
   void _showError(String message) {
@@ -221,17 +150,41 @@ class _FacultyDashboardState extends State<FacultyDashboard>
     );
   }
 
-  Widget _buildCurrentClassCard(ClassModel classData) {
-    if (_isDisposed) return const SizedBox.shrink();
+  Widget _buildCurrentClassCard(List<ClassModel> classes) {
+    if (_isDisposed || !mounted) return const SizedBox.shrink();
+    if (classes.isEmpty) {
+      print('No classes available to display');
+      return const SizedBox.shrink();
+    }
 
     try {
-      final bool isUpcoming = classData.status == 'Upcoming';
-      final bool isActive = classData.status == 'Active';
+      // Get current time
+      final now = DateTime.now();
+      print('Current time: $now');
 
-      if (!isActive && !isUpcoming) {
+      // Find the first active or upcoming class
+      ClassModel? currentClass;
+      for (var classModel in classes) {
+        print(
+          'Checking class: ${classModel.className}, Status: ${classModel.classStatus}',
+        );
+        if (classModel.classStatus == 'Active' ||
+            classModel.classStatus == 'Upcoming') {
+          currentClass = classModel;
+          print(
+            'Found current class: ${currentClass.className} (${currentClass.classStatus})',
+          );
+          break;
+        }
+      }
+
+      if (currentClass == null) {
+        print('No active or upcoming classes found');
         return const SizedBox.shrink();
       }
 
+      final bool isUpcoming = currentClass.classStatus == 'Upcoming';
+      final bool isActive = currentClass.classStatus == 'Active';
       final statusColor = isActive ? Colors.green : Colors.orange;
 
       return Card(
@@ -244,7 +197,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      ClassAttendanceScreen(classData: classData),
+                      ClassAttendanceScreen(classData: currentClass!),
                 ),
               );
             }
@@ -275,7 +228,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                         border: Border.all(color: statusColor),
                       ),
                       child: Text(
-                        classData.status,
+                        currentClass.classStatus,
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
@@ -286,14 +239,14 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  classData.className,
+                  currentClass.className,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  classData.subject,
+                  currentClass.subject,
                   style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
@@ -303,7 +256,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                     Icon(Icons.access_time, color: Colors.grey[600], size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      '${_formatTime(classData.startTime)} - ${_formatTime(classData.endTime)}',
+                      '${_formatTime(currentClass.startTime)} - ${_formatTime(currentClass.endTime)}',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
@@ -325,7 +278,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                       ],
                     ),
                     child: QrImageView(
-                      data: classData.id,
+                      data: currentClass.id,
                       version: QrVersions.auto,
                       size: 200,
                       backgroundColor: Colors.white,
@@ -349,7 +302,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                         Icon(Icons.schedule, size: 48, color: Colors.grey[400]),
                         const SizedBox(height: 8),
                         Text(
-                          'Class starts at ${_formatTime(classData.startTime)}',
+                          'Class starts at ${_formatTime(currentClass.startTime)}',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 16,
@@ -370,7 +323,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '${classData.attendedStudentIds.length} students present',
+                        '${currentClass.attendedStudentIds.length} students present',
                         style: const TextStyle(
                           color: Colors.purple,
                           fontWeight: FontWeight.bold,
@@ -381,7 +334,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                   ),
                 const SizedBox(height: 8),
                 Text(
-                  'Created on ${classData.createdAt.toString().split(' ')[0]}',
+                  'Created on ${currentClass.createdAt.toString().split(' ')[0]}',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
@@ -389,7 +342,9 @@ class _FacultyDashboardState extends State<FacultyDashboard>
           ),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Error in _buildCurrentClassCard: $e');
+      print('Stack trace: $stackTrace');
       return Card(
         margin: const EdgeInsets.all(16),
         child: Padding(
@@ -402,6 +357,8 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                 'Error displaying class',
                 style: TextStyle(color: Colors.red),
               ),
+              const SizedBox(height: 8),
+              Text('Error: $e', style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _refreshClasses,
@@ -462,27 +419,27 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: classData.status == 'Active'
+                    color: classData.classStatus == 'Active'
                         ? Colors.green.withOpacity(0.1)
-                        : classData.status == 'Upcoming'
+                        : classData.classStatus == 'Upcoming'
                         ? Colors.orange.withOpacity(0.1)
                         : Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: classData.status == 'Active'
+                      color: classData.classStatus == 'Active'
                           ? Colors.green
-                          : classData.status == 'Upcoming'
+                          : classData.classStatus == 'Upcoming'
                           ? Colors.orange
                           : Colors.red,
                     ),
                   ),
                   child: Text(
-                    classData.status,
+                    classData.classStatus,
                     style: TextStyle(
                       fontSize: 12,
-                      color: classData.status == 'Active'
+                      color: classData.classStatus == 'Active'
                           ? Colors.green
-                          : classData.status == 'Upcoming'
+                          : classData.classStatus == 'Upcoming'
                           ? Colors.orange
                           : Colors.red,
                     ),
@@ -534,10 +491,19 @@ class _FacultyDashboardState extends State<FacultyDashboard>
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
+      body: Consumer<ClassesProvider>(
+        builder: (context, classesProvider, child) {
+          print(
+            'Consumer rebuilding. Loading: ${classesProvider.isLoading}, Error: ${classesProvider.error}',
+          );
+
+          if (classesProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (classesProvider.error != null) {
+            print('Error from provider: ${classesProvider.error}');
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -546,7 +512,7 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      _error!,
+                      classesProvider.error!,
                       style: const TextStyle(color: Colors.red),
                       textAlign: TextAlign.center,
                     ),
@@ -559,9 +525,14 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                   ),
                 ],
               ),
-            )
-          : _classes.isEmpty
-          ? Center(
+            );
+          }
+
+          final classes = classesProvider.classes;
+          print('Number of classes from provider: ${classes.length}');
+
+          if (classes.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -571,49 +542,63 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              AddClassScreen(facultyId: _facultyId!),
-                        ),
-                      );
+                    onPressed: () async {
+                      final facultyDoc = await FirebaseFirestore.instance
+                          .collection('faculty')
+                          .doc(authProvider.user?.uid)
+                          .get();
+                      final facultyName = facultyDoc.data()?['name'] as String?;
+
+                      if (!mounted) return;
+
+                      if (facultyName != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddClassScreen(),
+                          ),
+                        ).then(
+                          (_) => _refreshClasses(),
+                        ); // Refresh after adding a class
+                      }
                     },
                     icon: const Icon(Icons.add),
                     label: const Text('Create Your First Class'),
                   ),
                 ],
               ),
-            )
-          : RefreshIndicator(
-              onRefresh: () async {
-                _refreshClasses();
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_classes.isNotEmpty) ...[
-                      _buildCurrentClassCard(_classes[0]),
-                      const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          'All Classes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple,
-                          ),
-                        ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              _refreshClasses();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildCurrentClassCard(classes),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'All Classes',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
                       ),
-                      _buildClassList(_classes),
-                    ],
-                  ],
-                ),
+                    ),
+                  ),
+                  _buildClassList(classes),
+                ],
               ),
             ),
+          );
+        },
+      ),
+
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 10.0,
@@ -635,13 +620,25 @@ class _FacultyDashboardState extends State<FacultyDashboard>
       ),
       floatingActionButton: FloatingActionButton(
         shape: const CircleBorder(),
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => AddClassScreen(facultyId: _facultyId!),
-            ),
+            MaterialPageRoute(builder: (context) => AddClassScreen()),
           );
+          final facultyDoc = await FirebaseFirestore.instance
+              .collection('faculty')
+              .doc(authProvider.user?.uid)
+              .get();
+          final facultyName = facultyDoc.data()?['name'] as String?;
+
+          if (!mounted) return;
+
+          if (facultyName != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddClassScreen()),
+            ).then((_) => _refreshClasses()); // Refresh after adding a class
+          }
         },
         child: const Icon(Icons.add),
       ),

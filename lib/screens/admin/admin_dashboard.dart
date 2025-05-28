@@ -366,7 +366,10 @@ class ClassMonitoring extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Class Monitoring')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('classes').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('classes')
+            .orderBy('startTime', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));

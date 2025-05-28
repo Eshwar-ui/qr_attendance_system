@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else if (email.endsWith('@student.com')) {
-          Navigator.pushReplacementNamed(context, '/studentDashboard');
+          Navigator.pushReplacementNamed(context, '/studentApp');
         } else {
           _showError(
             'Invalid email domain. Please use a valid institutional email.',

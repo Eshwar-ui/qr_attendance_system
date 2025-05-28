@@ -49,6 +49,8 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                       value: 'rollNumber',
                       child: Text('Roll Number'),
                     ),
+                    DropdownMenuItem(value: 'branch', child: Text('Branch')),
+                    DropdownMenuItem(value: 'year', child: Text('Year')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -97,14 +99,23 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                     final data = doc.data() as Map<String, dynamic>;
                     if (filterBy == 'name') {
                       return data['name'].toString().toLowerCase().contains(
-                        searchQuery,
+                        searchQuery.toLowerCase(),
                       );
-                    } else {
+                    } else if (filterBy == 'rollNumber') {
                       return data['rollNumber']
                           .toString()
                           .toLowerCase()
-                          .contains(searchQuery);
+                          .contains(searchQuery.toLowerCase());
+                    } else if (filterBy == 'branch') {
+                      return data['branch'].toString().toLowerCase().contains(
+                        searchQuery.toLowerCase(),
+                      );
+                    } else if (filterBy == 'year') {
+                      return data['year'].toString().toLowerCase().contains(
+                        searchQuery.toLowerCase(),
+                      );
                     }
+                    return false;
                   }).toList();
                 }
 

@@ -1,164 +1,223 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_attendance_system/data/model.dart';
+import 'package:qr_attendance_system/data/attendance_provider.dart';
+import 'package:qr_attendance_system/data/classes_provider.dart';
 import 'package:intl/intl.dart';
 
-class ClassAttendanceScreen extends StatelessWidget {
+class ClassAttendanceScreen extends StatefulWidget {
   final ClassModel classData;
 
   const ClassAttendanceScreen({super.key, required this.classData});
 
   @override
+  State<ClassAttendanceScreen> createState() => _ClassAttendanceScreenState();
+}
+
+class _ClassAttendanceScreenState extends State<ClassAttendanceScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch attended students when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
+      attendanceProvider.fetchAttendedStudents(
+        widget.classData.attendedStudentIds,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Class Attendance')),
+      appBar: AppBar(
+        title: const Text('Class Attendance'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              final attendanceProvider = Provider.of<AttendanceProvider>(
+                context,
+                listen: false,
+              );
+              attendanceProvider.fetchAttendedStudents(
+                widget.classData.attendedStudentIds,
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // Class Info Card
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    classData.className,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    classData.subject,
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 12),
-                  // Date Row
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatDate(classData.startTime),
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Time Row
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${_formatTime(classData.startTime)} - ${_formatTime(classData.endTime)}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(classData.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _getStatusColor(classData.status),
-                      ),
-                    ),
-                    child: Text(
-                      classData.status,
-                      style: TextStyle(
-                        color: _getStatusColor(classData.status),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildClassInfoCard(),
+          _buildAttendanceStats(),
+          _buildStudentsList(),
+        ],
+      ),
+    );
+  }
 
-          // Attendance Stats
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+  Widget _buildClassInfoCard() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.classData.className,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              widget.classData.subject,
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 12),
+            // Date Row
+            Row(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Students',
-                    '${classData.attendedStudentIds.length}',
-                    Icons.people,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Status',
-                    classData.isActive ? 'In Progress' : 'Ended',
-                    Icons.timer,
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  _formatDate(widget.classData.startTime),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            // Time Row
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  '${_formatTime(widget.classData.startTime)} - ${_formatTime(widget.classData.endTime)}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getStatusColor(
+                  widget.classData.classStatus,
+                ).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getStatusColor(widget.classData.classStatus),
+                ),
+              ),
+              child: Text(
+                widget.classData.classStatus,
+                style: TextStyle(
+                  color: _getStatusColor(widget.classData.classStatus),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          // Students List Header
+  Widget _buildAttendanceStats() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              'Total Students',
+              '${widget.classData.attendedStudentIds.length}',
+              Icons.people,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'Status',
+              widget.classData.isActive ? 'In Progress' : 'Ended',
+              Icons.timer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentsList() {
+    return Expanded(
+      child: Column(
+        children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Students Present',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  '${classData.attendedStudentIds.length} students',
-                  style: TextStyle(color: Colors.grey[600]),
+                Consumer<AttendanceProvider>(
+                  builder: (context, provider, child) {
+                    return Text(
+                      '${provider.attendedStudents.length} students',
+                      style: TextStyle(color: Colors.grey[600]),
+                    );
+                  },
                 ),
               ],
             ),
           ),
-
-          // Students List
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('students')
-                  .where(
-                    FieldPath.documentId,
-                    whereIn: classData.attendedStudentIds.isEmpty
-                        ? [
-                            '',
-                          ] // Provide a dummy value when there are no students
-                        : classData.attendedStudentIds,
-                  )
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: Consumer<AttendanceProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                if (provider.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          provider.error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            provider.fetchAttendedStudents(
+                              widget.classData.attendedStudentIds,
+                            );
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (provider.attendedStudents.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -180,24 +239,19 @@ class ClassAttendanceScreen extends StatelessWidget {
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: provider.attendedStudents.length,
                   itemBuilder: (context, index) {
-                    final studentDoc = snapshot.data!.docs[index];
-                    final studentData = Student.fromMap(
-                      studentDoc.data() as Map<String, dynamic>,
-                      studentDoc.id,
-                    );
-
+                    final student = provider.attendedStudents[index];
                     return Card(
                       child: ListTile(
                         leading: CircleAvatar(
                           child: Text(
-                            studentData.name[0].toUpperCase(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            student.name[0].toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        title: Text(studentData.name),
-                        subtitle: Text(studentData.rollNumber),
+                        title: Text(student.name),
+                        subtitle: Text(student.rollNumber),
                       ),
                     );
                   },
@@ -220,7 +274,7 @@ class ClassAttendanceScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.purple,

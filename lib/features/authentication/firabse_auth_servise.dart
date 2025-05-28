@@ -1,78 +1,123 @@
+/// Firebase Authentication Service Provider
+/// Manages user authentication state and operations throughout the app.
+/// Provides methods for login, logout, and user role management.
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Provider class for managing authentication state and operations
 class FirebaseAuthProvider with ChangeNotifier {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  /// Firebase Authentication instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  User? _user;
-  User? get user => _user;
+  /// Firebase Firestore instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  /// Current user's role (student, faculty, or admin)
+  String? _userRole;
 
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
+  /// Current user's display name
+  String? _userName;
 
-  FirebaseAuthProvider() {
-    _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
-  }
+  /// Error message if any operation fails
+  String? _error;
 
-  Future<void> signInWithEmailAndPassword({
-    required String email,
-    required String password,
-  }) async {
-    _setLoading(true);
+  /// Getter for current user's role
+  String? get userRole => _userRole;
+
+  /// Getter for current user's name
+  String? get userName => _userName;
+
+  /// Getter for error message
+  String? get error => _error;
+
+  /// Signs in a user with email and password
+  ///
+  /// Parameters:
+  /// - email: User's email address
+  /// - password: User's password
+  ///
+  /// Returns true if login successful, false otherwise
+  /// Updates user role and name on successful login
+  Future<bool> signIn(String email, String password) async {
     try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      _user = credential.user;
-      _errorMessage = null;
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _mapFirebaseError(e);
-      // Show snackbar with error message
-      if (e.code == 'wrong-password' || e.code == 'user-not-found') {
-        ScaffoldMessenger.of(
-          _firebaseAuth.app.toString() as BuildContext,
-        ).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage ?? 'Authentication failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      if (userCredential.user != null) {
+        await _fetchUserRole(userCredential.user!.uid);
+        return true;
       }
-    } finally {
-      _setLoading(false);
+      return false;
+    } catch (e) {
+      _error = 'Login failed: ${e.toString()}';
+      notifyListeners();
+      return false;
     }
   }
 
-  Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    _user = null;
-    notifyListeners();
+  /// Signs out the current user
+  ///
+  /// Clears user role and name
+  /// Returns true if logout successful, false otherwise
+  Future<bool> signOut() async {
+    try {
+      await _auth.signOut();
+      _userRole = null;
+      _userName = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Logout failed: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
   }
 
-  void _onAuthStateChanged(User? firebaseUser) {
-    _user = firebaseUser;
-    notifyListeners();
-  }
+  /// Fetches the user's role and name from Firestore
+  ///
+  /// Parameters:
+  /// - uid: User's unique identifier
+  ///
+  /// Updates _userRole and _userName based on Firestore data
+  Future<void> _fetchUserRole(String uid) async {
+    try {
+      // Check admin collection first
+      var adminDoc = await _firestore.collection('admins').doc(uid).get();
+      if (adminDoc.exists) {
+        _userRole = 'admin';
+        _userName = adminDoc.data()?['name'];
+        notifyListeners();
+        return;
+      }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
-  }
+      // Check faculty collection
+      var facultyDoc = await _firestore.collection('faculty').doc(uid).get();
+      if (facultyDoc.exists) {
+        _userRole = 'faculty';
+        _userName = facultyDoc.data()?['name'];
+        notifyListeners();
+        return;
+      }
 
-  String _mapFirebaseError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'No user found with this email.';
-      case 'wrong-password':
-        return 'Incorrect password.';
-      case 'invalid-email':
-        return 'Invalid email format.';
-      default:
-        return 'Authentication failed: ${e.message}';
+      // Check students collection
+      var studentDoc = await _firestore.collection('students').doc(uid).get();
+      if (studentDoc.exists) {
+        _userRole = 'student';
+        _userName = studentDoc.data()?['name'];
+        notifyListeners();
+        return;
+      }
+
+      // No role found
+      _error = 'User role not found';
+      notifyListeners();
+    } catch (e) {
+      _error = 'Error fetching user role: ${e.toString()}';
+      notifyListeners();
     }
   }
 }
