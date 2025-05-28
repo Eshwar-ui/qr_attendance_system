@@ -60,11 +60,11 @@ class Student {
       email: map['email'],
       rollNumber: map['rollNumber'],
       branch: map['branch'],
-      year: map['year'],
-      section: map['section'],
-      semester: map['semester'],
-      phone: map['phone'],
-      address: map['address'],
+      year: map['year'] ?? '1',
+      section: map['section'] ?? 'A',
+      semester: map['semester'] ?? '1',
+      phone: map['phone'] ?? '',
+      address: map['address'] ?? '',
       attendedClassIds: List<String>.from(map['attendedClassIds'] ?? []),
     );
   }

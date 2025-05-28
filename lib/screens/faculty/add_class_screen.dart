@@ -109,22 +109,22 @@ class _AddClassScreenState extends State<AddClassScreen> {
   }
 
   Future<void> _createClass() async {
-    if (_isLoading) return; // Prevent double submission
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_endTime.isBefore(_startTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("End time must be after start time")),
+        const SnackBar(
+          content: Text("End time must be after start time"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Get faculty name from Firestore using Provider
       final authProvider = Provider.of<FirebaseAuthProvider>(
         context,
         listen: false,
@@ -135,12 +135,9 @@ class _AddClassScreenState extends State<AddClassScreen> {
           .get();
 
       final facultyName = facultyDoc.data()?['name'] as String?;
-      if (facultyName == null) {
-        throw Exception('Faculty name not found');
-      }
+      if (facultyName == null) throw Exception('Faculty name not found');
 
       final classId = const Uuid().v4();
-
       final newClass = ClassModel(
         id: classId,
         className: _classNameController.text.trim(),
@@ -162,121 +159,252 @@ class _AddClassScreenState extends State<AddClassScreen> {
       );
 
       Navigator.pop(context);
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Class created and QR generated")),
+        const SnackBar(
+          content: Text("Class created and QR generated"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } catch (e) {
-      print('Error creating class: $e'); // Add debug print
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error creating class: $e")));
-      setState(() {
-        _isLoading = false;
-      });
+      print('Error creating class: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error creating class: $e"),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Class & Generate QR")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Form(
+      appBar: AppBar(
+        title: const Text(
+          "Create Class",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                    Theme.of(context).primaryColor,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'New Class Details',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fill in the information below to create a new class',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
+                    _buildInputField(
                       controller: _classNameController,
-                      decoration: const InputDecoration(
-                        labelText: "Class Name",
-                        border: OutlineInputBorder(),
+                      label: "Class Name",
+                      icon: Icons.class_,
+                      hint: "Enter class name",
+                    ),
+                    const SizedBox(height: 20),
+                    _buildInputField(
+                      controller: _subjectController,
+                      label: "Subject",
+                      icon: Icons.subject,
+                      hint: "Enter subject name",
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Schedule',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
                       ),
-                      enabled: !_isLoading,
-                      validator: (value) =>
-                          value!.isEmpty ? "Enter class name" : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _subjectController,
-                      decoration: const InputDecoration(
-                        labelText: "Subject",
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isLoading,
-                      validator: (value) =>
-                          value!.isEmpty ? "Enter subject" : null,
+                    _buildDateTimePicker(
+                      title: "Date",
+                      value: _formatDate(_startTime),
+                      icon: Icons.calendar_today,
+                      onTap: _selectDate,
                     ),
-                    const SizedBox(height: 24),
-                    ListTile(
-                      title: const Text("Date"),
-                      subtitle: Text(_formatDate(_startTime)),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: _isLoading ? null : _selectDate,
-                    ),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: ListTile(
-                            title: const Text("Start Time"),
-                            subtitle: Text(_formatTimeOfDay(_startTime)),
-                            trailing: const Icon(Icons.access_time),
-                            onTap: _isLoading ? null : _selectStartTime,
+                          child: _buildDateTimePicker(
+                            title: "Start Time",
+                            value: _formatTimeOfDay(_startTime),
+                            icon: Icons.access_time,
+                            onTap: _selectStartTime,
                           ),
                         ),
+                        const SizedBox(width: 16),
                         Expanded(
-                          child: ListTile(
-                            title: const Text("End Time"),
-                            subtitle: Text(_formatTimeOfDay(_endTime)),
-                            trailing: const Icon(Icons.access_time),
-                            onTap: _isLoading ? null : _selectEndTime,
+                          child: _buildDateTimePicker(
+                            title: "End Time",
+                            value: _formatTimeOfDay(_endTime),
+                            icon: Icons.access_time,
+                            onTap: _selectEndTime,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
+                      height: 56,
+                      child: ElevatedButton(
                         onPressed: _isLoading ? null : _createClass,
-                        icon: _isLoading
-                            ? Container(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
                                 width: 24,
                                 height: 24,
-                                padding: const EdgeInsets.all(2.0),
-                                child: const CircularProgressIndicator(
+                                child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 3,
                                 ),
                               )
-                            : const Icon(Icons.qr_code),
-                        label: Text(
-                          _isLoading
-                              ? "Creating Class..."
-                              : "Create Class & Generate QR",
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.purple.withOpacity(
-                            0.6,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.qr_code),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "Create Class & Generate QR",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+      ),
+      enabled: !_isLoading,
+      validator: (value) => value!.isEmpty ? "This field is required" : null,
+    );
+  }
+
+  Widget _buildDateTimePicker({
+    required String title,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: _isLoading ? null : onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade50,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(icon, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -291,19 +419,95 @@ class GeneratedQRScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("QR Code for Class")),
-      body: Center(
+      appBar: AppBar(
+        title: const Text(
+          "QR Code Generated",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 64),
+            const SizedBox(height: 24),
             const Text(
-              "Scan this QR to mark attendance",
-              style: TextStyle(fontSize: 20),
+              "Class Created Successfully!",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            QrImageView(data: classId, version: QrVersions.auto, size: 300),
-            const SizedBox(height: 12),
-            // Text("Class ID: $classId"),
+            const SizedBox(height: 8),
+            Text(
+              "Share this QR code with your students",
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  QrImageView(
+                    data: classId,
+                    version: QrVersions.auto,
+                    size: 250,
+                    backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Row(
+                        // mainAxisAlignment: MainAxisAlignment.center,
+                        // crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            // height: 5,
+                            width: 220,
+                            child: Text(
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              "Students can scan this to mark attendance",
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

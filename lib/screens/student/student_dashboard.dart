@@ -90,6 +90,254 @@ class _StudentDashboardState extends State<StudentDashboard>
     _cleanupScanner();
   }
 
+  Widget _buildAttendanceCard(double percentage, int attended, int total) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              Theme.of(context).primaryColor,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Attendance Overview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$percentage%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Stack(
+              children: [
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: percentage / 100,
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Classes Attended',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$attended/$total',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                _buildAttendanceStatus(percentage),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceStatus(double percentage) {
+    String status;
+    Color color;
+    IconData icon;
+
+    if (percentage >= 75) {
+      status = 'Excellent';
+      color = Colors.green;
+      icon = Icons.check_circle;
+    } else if (percentage >= 60) {
+      status = 'Average';
+      color = Colors.orange;
+      icon = Icons.warning;
+    } else {
+      status = 'Poor';
+      color = Colors.red;
+      icon = Icons.error;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 4),
+          Text(
+            status,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassList(List<QueryDocumentSnapshot> classes) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: classes.length,
+      itemBuilder: (context, index) {
+        final classData = classes[index].data() as Map<String, dynamic>;
+        final startTime = DateTime.parse(classData['startTime']);
+        final endTime = DateTime.parse(classData['endTime']);
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.class_,
+                color: Theme.of(context).primaryColor,
+                size: 24,
+              ),
+            ),
+            title: Text(
+              classData['className'],
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  classData['subject'],
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.schedule, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      '${DateFormat('MMM d, y').format(startTime)} • ${DateFormat('h:mm a').format(startTime)} - ${DateFormat('h:mm a').format(endTime)}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'By ${classData['facultyName']}',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: const Text(
+                    'Attended',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<FirebaseAuthProvider>(
@@ -99,22 +347,6 @@ class _StudentDashboardState extends State<StudentDashboard>
     final studentId = authProvider.user?.uid ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Student Dashboard'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              authProvider.signOut();
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              });
-            },
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('students')
@@ -122,7 +354,24 @@ class _StudentDashboardState extends State<StudentDashboard>
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.red.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: TextStyle(color: Colors.red.shade400),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -147,306 +396,174 @@ class _StudentDashboardState extends State<StudentDashboard>
               }
 
               final totalClasses = classSnapshot.data?.docs.length ?? 0;
-              final attendancePercentage = totalClasses > 0
+              final percentage = totalClasses > 0
                   ? (attendedClasses.length / totalClasses * 100)
-                        .toStringAsFixed(1)
-                  : '0';
+                  : 0.0;
 
-              return Scaffold(
-                body: Column(
-                  children: [
-                    // Attendance Statistics Card
-
-                    // QR Scanner
-                    if (_isScanning)
-                      Expanded(
-                        child: _scannerController == null
-                            ? const Center(child: CircularProgressIndicator())
-                            : Stack(
-                                // fit: StackFit.expand,
-                                children: [
-                                  MobileScanner(
-                                    controller: _scannerController!,
-                                    onDetect: (capture) {
-                                      if (!mounted || !_isScanning) return;
-
-                                      final List<Barcode> barcodes =
-                                          capture.barcodes;
-                                      for (final barcode in barcodes) {
-                                        final value = barcode.rawValue;
-                                        if (value != null && value.isNotEmpty) {
-                                          // Stop scanning before handling the code
-                                          _stopScanning();
-                                          _handleQRCode(value);
-                                          break;
-                                        }
-                                      }
-                                    },
-                                    errorBuilder: (context, error, child) {
-                                      return Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                              Icons.error,
-                                              color: Colors.red,
-                                              size: 48,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'Scanner error: ${error.errorCode ?? 'Unknown error'}',
-                                              style: const TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            ElevatedButton(
-                                              onPressed: _reinitializeScanner,
-                                              child: const Text('Retry'),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      color: Colors.black54,
-                                      padding: const EdgeInsets.all(16),
-                                      child: const Text(
-                                        'Scan QR Code to mark attendance',
-                                        style: TextStyle(color: Colors.white),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 16,
-                                    right: 16,
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.flip_camera_android,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () =>
-                                          _scannerController!.switchCamera(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-
-                    Card(
-                      margin: const EdgeInsets.all(16),
-                      child: Padding(
+              return RefreshIndicator(
+                onRefresh: () async {
+                  setState(() {});
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Attendance',
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                Text(
-                                  '$attendancePercentage%',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        color: _getAttendanceColor(
-                                          double.parse(attendancePercentage),
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: double.parse(attendancePercentage) / 100,
-                              backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _getAttendanceColor(
-                                  double.parse(attendancePercentage),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${attendedClasses.length} of $totalClasses classes attended',
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(color: Colors.grey[600]),
-                            ),
-                          ],
+                        child: _buildAttendanceCard(
+                          double.parse(percentage.toStringAsFixed(1)),
+                          attendedClasses.length,
+                          totalClasses,
                         ),
                       ),
-                    ),
-
-                    // Attended Classes List
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'Attended Classes',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'Attended Classes',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('classes')
-                                  .where(
-                                    FieldPath.documentId,
-                                    whereIn: attendedClasses.isEmpty
-                                        ? ['']
-                                        : attendedClasses,
-                                  )
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasError) {
-                                  return Center(
-                                    child: Text('Error: ${snapshot.error}'),
-                                  );
-                                }
-
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-
-                                final classes = snapshot.data?.docs ?? [];
-
-                                if (classes.isEmpty) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.class_outlined,
-                                          size: 64,
-                                          color: Colors.grey[400],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'No classes attended yet',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-
-                                return ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: classes.length,
-                                  itemBuilder: (context, index) {
-                                    final classData =
-                                        classes[index].data()
-                                            as Map<String, dynamic>;
-                                    final startTime = DateTime.parse(
-                                      classData['startTime'],
-                                    );
-                                    final endTime = DateTime.parse(
-                                      classData['endTime'],
-                                    );
-
-                                    return Card(
-                                      child: ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.1),
-                                          child: Icon(
-                                            Icons.class_,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                          ),
-                                        ),
-                                        title: Text(classData['className']),
-                                        subtitle: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(classData['subject']),
-                                            Text(
-                                              '${DateFormat('MMM d, y').format(startTime)} • ${DateFormat('h:mm a').format(startTime)} - ${DateFormat('h:mm a').format(endTime)}',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        trailing: Text(
-                                          'By ${classData['facultyName']}',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 8),
+                      if (_isScanning) ...[
+                        SizedBox(
+                          height: 300,
+                          child: _scannerController == null
+                              ? const Center(child: CircularProgressIndicator())
+                              : _buildScannerWidget(),
+                        ),
+                      ],
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('classes')
+                              .where(
+                                FieldPath.documentId,
+                                whereIn: attendedClasses.isEmpty
+                                    ? ['']
+                                    : attendedClasses,
+                              )
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Text('Error: ${snapshot.error}'),
+                              );
+                            }
 
-                // floatingActionButton: FloatingActionButton(
-                //   shape: CircleBorder(),
-                //   onPressed: _isScanning ? _stopScanning : _startScanning,
-                //   child: Icon(
-                //     _isScanning ? Icons.close : Icons.qr_code_scanner,
-                //   ),
-                // ),
-                // floatingActionButtonLocation:
-                //     FloatingActionButtonLocation.centerDocked,
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+
+                            final classes = snapshot.data?.docs ?? [];
+
+                            if (classes.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.class_outlined,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No classes attended yet',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Scan QR code to mark your attendance',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return _buildClassList(classes);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );
         },
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: _isScanning ? _stopScanning : _startScanning,
-      //   icon: Icon(_isScanning ? Icons.close : Icons.qr_code_scanner),
-      //   label: Text(_isScanning ? 'Cancel' : 'Scan QR'),
-      // ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Color _getAttendanceColor(double percentage) {
-    if (percentage >= 75) {
-      return Colors.green;
-    } else if (percentage >= 60) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
+  Widget _buildScannerWidget() {
+    return Stack(
+      children: [
+        MobileScanner(
+          controller: _scannerController!,
+          onDetect: (capture) {
+            if (!mounted || !_isScanning) return;
+            final List<Barcode> barcodes = capture.barcodes;
+            for (final barcode in barcodes) {
+              final value = barcode.rawValue;
+              if (value != null && value.isNotEmpty) {
+                _stopScanning();
+                _handleQRCode(value);
+                break;
+              }
+            }
+          },
+        ),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).primaryColor, width: 2),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            color: Colors.black54,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Scan QR Code',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.flip_camera_android,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => _scannerController?.switchCamera(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _handleQRCode(String classId) async {

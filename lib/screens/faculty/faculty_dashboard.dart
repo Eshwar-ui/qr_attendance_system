@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_attendance_system/screens/faculty/faculty_profile.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:async';
 import 'package:qr_attendance_system/features/authentication/firabse_auth_servise.dart';
@@ -22,7 +23,7 @@ class FacultyDashboard extends StatefulWidget {
 
 class _FacultyDashboardState extends State<FacultyDashboard>
     with WidgetsBindingObserver {
-  int currentIndex = 0;
+  int _currentIndex = 0;
   bool _isDisposed = false;
   Timer? _refreshTimer;
 
@@ -158,11 +159,9 @@ class _FacultyDashboardState extends State<FacultyDashboard>
     }
 
     try {
-      // Get current time
       final now = DateTime.now();
       print('Current time: $now');
 
-      // Find the first active or upcoming class
       ClassModel? currentClass;
       for (var classModel in classes) {
         print(
@@ -187,157 +186,239 @@ class _FacultyDashboardState extends State<FacultyDashboard>
       final bool isActive = currentClass.classStatus == 'Active';
       final statusColor = isActive ? Colors.green : Colors.orange;
 
-      return Card(
+      return Container(
         margin: const EdgeInsets.all(16),
-        elevation: 4,
-        child: InkWell(
-          onTap: () {
-            if (!_isDisposed && mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ClassAttendanceScreen(classData: currentClass!),
-                ),
-              );
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isActive ? 'Active Class' : 'Upcoming Class',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: statusColor),
-                      ),
-                      child: Text(
-                        currentClass.classStatus,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  currentClass.className,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              Theme.of(context).primaryColor,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (!_isDisposed && mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ClassAttendanceScreen(classData: currentClass!),
                   ),
-                ),
-                Text(
-                  currentClass.subject,
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.access_time, color: Colors.grey[600], size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_formatTime(currentClass.startTime)} - ${_formatTime(currentClass.endTime)}',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (isActive)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: QrImageView(
-                      data: currentClass.id,
-                      version: QrVersions.auto,
-                      size: 200,
-                      backgroundColor: Colors.white,
-                      errorStateBuilder: (context, error) => const Center(
-                        child: Text(
-                          'Error generating QR code',
-                          style: TextStyle(color: Colors.red),
+                );
+              }
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isActive ? 'Active Class' : 'Upcoming Class',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
                         ),
                       ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: statusColor.withOpacity(0.5),
+                          ),
+                        ),
+                        child: Text(
+                          currentClass.classStatus,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    currentClass.className,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                  )
-                else
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    currentClass.subject,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.schedule, size: 48, color: Colors.grey[400]),
-                        const SizedBox(height: 8),
+                        Icon(
+                          Icons.access_time,
+                          color: Colors.white.withOpacity(0.9),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
                         Text(
-                          'Class starts at ${_formatTime(currentClass.startTime)}',
+                          '${_formatTime(currentClass.startTime)} - ${_formatTime(currentClass.endTime)}',
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  isActive
-                      ? 'Scan to mark attendance'
-                      : 'QR code will be available when class starts',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                if (isActive)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${currentClass.attendedStudentIds.length} students present',
-                        style: const TextStyle(
-                          color: Colors.purple,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(height: 24),
+                  if (isActive)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            QrImageView(
+                              data: currentClass.id,
+                              version: QrVersions.auto,
+                              size: 200,
+                              backgroundColor: Colors.white,
+                              errorStateBuilder: (context, error) =>
+                                  const Center(
+                                    child: Text(
+                                      'Error generating QR code',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Scan to mark attendance',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.people,
+                                    size: 16,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${currentClass.attendedStudentIds.length} students present',
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Colors.purple),
-                    ],
-                  ),
-                const SizedBox(height: 8),
-                Text(
-                  'Created on ${currentClass.createdAt.toString().split(' ')[0]}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 48,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Class starts at ${_formatTime(currentClass.startTime)}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'QR code will be available when class starts',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -386,9 +467,19 @@ class _FacultyDashboardState extends State<FacultyDashboard>
       itemCount: classes.length,
       itemBuilder: (context, index) {
         final classData = classes[index];
+        final statusColor = classData.classStatus == 'Active'
+            ? Colors.green
+            : classData.classStatus == 'Upcoming'
+            ? Colors.orange
+            : Colors.red;
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+          child: InkWell(
             onTap: () {
               Navigator.push(
                 context,
@@ -398,64 +489,229 @@ class _FacultyDashboardState extends State<FacultyDashboard>
                 ),
               );
             },
-            title: Text(classData.className),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(classData.subject),
-                Text(
-                  '${_formatTime(classData.startTime)} - ${_formatTime(classData.endTime)}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.class_,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              classData.className,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              classData.subject,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: statusColor),
+                        ),
+                        child: Text(
+                          classData.classStatus,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: classData.classStatus == 'Active'
-                        ? Colors.green.withOpacity(0.1)
-                        : classData.classStatus == 'Upcoming'
-                        ? Colors.orange.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: classData.classStatus == 'Active'
-                          ? Colors.green
-                          : classData.classStatus == 'Upcoming'
-                          ? Colors.orange
-                          : Colors.red,
-                    ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_formatTime(classData.startTime)} - ${_formatTime(classData.endTime)}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.people,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${classData.attendedStudentIds.length}',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    classData.classStatus,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: classData.classStatus == 'Active'
-                          ? Colors.green
-                          : classData.classStatus == 'Upcoming'
-                          ? Colors.orange
-                          : Colors.red,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${classData.attendedStudentIds.length} students',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return Consumer<ClassesProvider>(
+          builder: (context, classesProvider, child) {
+            if (classesProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (classesProvider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        classesProvider.error!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _refreshClasses,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final classes = classesProvider.classes;
+
+            if (classes.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'No classes created yet',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddClassScreen(),
+                        ),
+                      ).then((_) => _refreshClasses()),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Your First Class'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async => _refreshClasses(),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildCurrentClassCard(classes),
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'All Classes',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple,
+                        ),
+                      ),
+                    ),
+                    _buildClassList(classes),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      case 1:
+        return const FacultyProfileScreen();
+      default:
+        return const Center(child: Text('Unknown page'));
+    }
   }
 
   @override
@@ -467,182 +723,107 @@ class _FacultyDashboardState extends State<FacultyDashboard>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Faculty Dashboard'),
+        title: Text(
+          _currentIndex == 0 ? 'Faculty Dashboard' : 'Faculty Profile',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
         actions: [
-          IconButton(
-            onPressed: _refreshClasses,
-            icon: const Icon(Icons.refresh, size: 24),
-          ),
-          IconButton(
-            onPressed: () async {
-              try {
-                await authProvider.signOut();
-                if (!mounted) return;
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              } catch (e) {
-                _showError('Failed to sign out. Please try again.');
-              }
-            },
-            icon: const Icon(Icons.logout, size: 24),
-          ),
+          if (_currentIndex == 0)
+            IconButton(
+              onPressed: () async {
+                try {
+                  await authProvider.signOut();
+                  if (!mounted) return;
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  _showError('Failed to sign out. Please try again.');
+                }
+              },
+              icon: const Icon(Icons.logout, size: 24),
+            ),
         ],
       ),
-      body: Consumer<ClassesProvider>(
-        builder: (context, classesProvider, child) {
-          print(
-            'Consumer rebuilding. Loading: ${classesProvider.isLoading}, Error: ${classesProvider.error}',
-          );
+      body: _buildBody(),
+      bottomNavigationBar: Container(
+        height: 70,
+        decoration: BoxDecoration(color: Colors.transparent),
+        child: BottomAppBar(
+          color: Theme.of(context).primaryColor,
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 10.0,
+          elevation: 8,
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              // gradient: LinearGradient(
+              //   colors: [
+              //     Theme.of(context).primaryColor.withOpacity(0.8),
+              //     Theme.of(context).primaryColor,
+              //   ],
+              //   begin: Alignment.topLeft,
+              //   end: Alignment.bottomRight,
+              // ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.home, 'Dashboard'),
+                _buildNavItem(1, Icons.person, 'Profile'),
+              ],
+            ),
+          ),
+        ),
+      ),
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              shape: const CircleBorder(),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddClassScreen()),
+              ).then((_) => _refreshClasses()),
+              elevation: 4,
+              child: const Icon(Icons.add),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
 
-          if (classesProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (classesProvider.error != null) {
-            print('Error from provider: ${classesProvider.error}');
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      classesProvider.error!,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _refreshClasses,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final classes = classesProvider.classes;
-          print('Number of classes from provider: ${classes.length}');
-
-          if (classes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'No classes created yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final facultyDoc = await FirebaseFirestore.instance
-                          .collection('faculty')
-                          .doc(authProvider.user?.uid)
-                          .get();
-                      final facultyName = facultyDoc.data()?['name'] as String?;
-
-                      if (!mounted) return;
-
-                      if (facultyName != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddClassScreen(),
-                          ),
-                        ).then(
-                          (_) => _refreshClasses(),
-                        ); // Refresh after adding a class
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create Your First Class'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              _refreshClasses();
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildCurrentClassCard(classes),
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'All Classes',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
-                      ),
-                    ),
-                  ),
-                  _buildClassList(classes),
-                ],
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _currentIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.7),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-          );
-        },
-      ),
-
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 10.0,
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          currentIndex: currentIndex,
-          onTap: (index) {
-            setState(() {
-              currentIndex = index;
-            });
-          },
-          iconSize: 24,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddClassScreen()),
-          );
-          final facultyDoc = await FirebaseFirestore.instance
-              .collection('faculty')
-              .doc(authProvider.user?.uid)
-              .get();
-          final facultyName = facultyDoc.data()?['name'] as String?;
-
-          if (!mounted) return;
-
-          if (facultyName != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddClassScreen()),
-            ).then((_) => _refreshClasses()); // Refresh after adding a class
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

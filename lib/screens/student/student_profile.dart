@@ -15,9 +15,24 @@ class StudentProfile extends StatelessWidget {
     final studentId = authProvider.user?.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Student Profile')),
       body: studentId == null
-          ? const Center(child: Text('Not authenticated'))
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.red.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Not authenticated',
+                    style: TextStyle(fontSize: 18, color: Colors.red),
+                  ),
+                ],
+              ),
+            )
           : StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('students')
@@ -25,7 +40,24 @@ class StudentProfile extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -33,7 +65,26 @@ class StudentProfile extends StatelessWidget {
                 }
 
                 if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Center(child: Text('Student profile not found'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_off,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Student profile not found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 final studentData =
@@ -44,51 +95,85 @@ class StudentProfile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey[300],
-                          child: const Icon(Icons.person, size: 50),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).primaryColor.withOpacity(0.8),
+                              Theme.of(context).primaryColor,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              studentData['name'] ?? 'N/A',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              studentData['rollNumber'] ?? 'N/A',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      _buildInfoCard(
-                        title: 'Personal Information',
-                        children: [
-                          _buildInfoRow('Name', studentData['name'] ?? 'N/A'),
-                          _buildInfoRow(
-                            'Roll Number',
-                            studentData['rollNumber'] ?? 'N/A',
-                          ),
-                          _buildInfoRow('Email', studentData['email'] ?? 'N/A'),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoCard(
+                      _buildInfoSection(
+                        context,
                         title: 'Academic Information',
-                        children: [
-                          _buildInfoRow(
+                        icon: Icons.school,
+                        items: [
+                          _buildInfoItem(
                             'Department',
                             studentData['department'] ?? 'N/A',
+                            Icons.business,
                           ),
-                          _buildInfoRow(
+                          _buildInfoItem(
                             'Semester',
                             studentData['semester']?.toString() ?? 'N/A',
+                            Icons.calendar_today,
                           ),
-                          _buildInfoRow(
+                          _buildInfoItem(
                             'Section',
                             studentData['section'] ?? 'N/A',
+                            Icons.group,
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildInfoCard(
+                      _buildInfoSection(
+                        context,
                         title: 'Contact Information',
-                        children: [
-                          _buildInfoRow('Phone', studentData['phone'] ?? 'N/A'),
-                          _buildInfoRow(
+                        icon: Icons.contact_mail,
+                        items: [
+                          _buildInfoItem(
+                            'Email',
+                            studentData['email'] ?? 'N/A',
+                            Icons.email,
+                          ),
+                          _buildInfoItem(
+                            'Phone',
+                            studentData['phone'] ?? 'N/A',
+                            Icons.phone,
+                          ),
+                          _buildInfoItem(
                             'Address',
                             studentData['address'] ?? 'N/A',
+                            Icons.location_on,
                           ),
                         ],
                       ),
@@ -100,50 +185,66 @@ class StudentProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard({
+  Widget _buildInfoSection(
+    BuildContext context, {
     required String title,
-    required List<Widget> children,
+    required IconData icon,
+    required List<Widget> items,
   }) {
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(icon, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            const Divider(),
-            const SizedBox(height: 8),
-            ...children,
+            const Divider(height: 24),
+            ...items,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoItem(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
-              ),
-            ),
-          ),
+          Icon(icon, size: 20, color: Colors.grey.shade600),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

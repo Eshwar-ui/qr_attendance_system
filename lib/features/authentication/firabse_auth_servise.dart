@@ -14,6 +14,9 @@ class FirebaseAuthProvider with ChangeNotifier {
   /// Firebase Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Current Firebase user
+  User? get user => _auth.currentUser;
+
   /// Current user's role (student, faculty, or admin)
   String? _userRole;
 

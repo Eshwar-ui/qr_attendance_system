@@ -21,7 +21,12 @@ class AdminDashboard extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
         actions: [
           IconButton(
             onPressed: () async {
@@ -37,89 +42,149 @@ class AdminDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.admin_panel_settings,
-                      size: 48,
-                      color: Colors.purple,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Welcome, Admin',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    Text(
-                      authProvider.user?.email ?? '',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                    ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                    Theme.of(context).primaryColor,
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.admin_panel_settings,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Welcome, Admin',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              authProvider.user?.email ?? '',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            // const DashboardOverview(),
-            const SizedBox(height: 24),
-            // Admin Actions
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.5, // Added to fix sizing
-              children: [
-                _buildActionCard(
-                  context,
-                  'View Statistics',
-                  Icons.bar_chart,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StatisticsScreen(),
+            const DashboardOverview(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  },
-                ),
-                _buildActionCard(context, 'Manage Faculty', Icons.people, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FacultyManagement(),
                     ),
-                  );
-                }),
-                _buildActionCard(context, 'Manage Students', Icons.school, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const StudentManagementScreen(),
-                    ),
-                  );
-                }),
-                _buildActionCard(
-                  context,
-                  'Class Monitoring',
-                  Icons.monitor,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ClassMonitoring(),
+                  ),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.2,
+                    children: [
+                      _buildActionCard(
+                        context,
+                        'View Statistics',
+                        Icons.bar_chart,
+                        Colors.blue,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const StatisticsScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              ],
+                      _buildActionCard(
+                        context,
+                        'Manage Faculty',
+                        Icons.people,
+                        Colors.orange,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FacultyManagement(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionCard(
+                        context,
+                        'Manage Students',
+                        Icons.school,
+                        Colors.green,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const StudentManagementScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionCard(
+                        context,
+                        'Class Monitoring',
+                        Icons.monitor,
+                        Colors.purple,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ClassMonitoring(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -131,25 +196,40 @@ class AdminDashboard extends StatelessWidget {
     BuildContext context,
     String title,
     IconData icon,
+    Color color,
     VoidCallback onTap,
   ) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withOpacity(0.1)),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: Colors.purple),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 32, color: color),
+              ),
               const SizedBox(height: 12),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
             ],
@@ -165,43 +245,87 @@ class DashboardOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('statistics').snapshots(),
+    return StreamBuilder<List<int>>(
+      stream: _getStatistics(),
       builder: (context, snapshot) {
-        return GridView.count(
+        return Container(
           padding: const EdgeInsets.all(16),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: [
-            _buildStatCard(
-              'Total Faculty',
-              '${snapshot.data?.docs.length ?? 0}',
-              Icons.people,
-              Colors.blue,
-            ),
-            _buildStatCard(
-              'Total Students',
-              '${snapshot.data?.docs.length ?? 0}',
-              Icons.school,
-              Colors.green,
-            ),
-            _buildStatCard(
-              'Active Classes',
-              '${snapshot.data?.docs.length ?? 0}',
-              Icons.class_,
-              Colors.orange,
-            ),
-            _buildStatCard(
-              'Total Attendance',
-              '${snapshot.data?.docs.length ?? 0}',
-              Icons.check_circle,
-              Colors.purple,
-            ),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Overview',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.5,
+                children: [
+                  _buildStatCard(
+                    'Total Faculty',
+                    '${snapshot.data?[0] ?? 0}',
+                    Icons.people,
+                    Colors.blue,
+                  ),
+                  _buildStatCard(
+                    'Total Students',
+                    '${snapshot.data?[1] ?? 0}',
+                    Icons.school,
+                    Colors.green,
+                  ),
+                  _buildStatCard(
+                    'Active Classes',
+                    '${snapshot.data?[2] ?? 0}',
+                    Icons.class_,
+                    Colors.orange,
+                  ),
+                  _buildStatCard(
+                    'Total Attendance',
+                    '${snapshot.data?[3] ?? 0}',
+                    Icons.check_circle,
+                    Colors.purple,
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
+  }
+
+  Stream<List<int>> _getStatistics() {
+    return Stream.periodic(const Duration(seconds: 5), (_) {
+      return Future.wait([
+        FirebaseFirestore.instance
+            .collection('faculty')
+            .get()
+            .then((snap) => snap.size),
+        FirebaseFirestore.instance
+            .collection('students')
+            .get()
+            .then((snap) => snap.size),
+        FirebaseFirestore.instance
+            .collection('classes')
+            .where('isActive', isEqualTo: true)
+            .get()
+            .then((snap) => snap.size),
+        FirebaseFirestore.instance.collection('classes').get().then((
+          classes,
+        ) async {
+          int total = 0;
+          for (var doc in classes.docs) {
+            total += (doc.data()['attendedStudentIds'] as List).length;
+          }
+          return total;
+        }),
+      ]);
+    }).asyncMap((event) async => await event);
   }
 
   Widget _buildStatCard(
@@ -211,25 +335,46 @@ class DashboardOverview extends StatelessWidget {
     Color color,
   ) {
     return Card(
-      elevation: 4,
-      child: Padding(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: color),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 24, color: color),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
               title,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -245,12 +390,32 @@ class FacultyManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Faculty')),
+      appBar: AppBar(
+        title: const Text(
+          'Manage Faculty',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('faculty').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -259,39 +424,146 @@ class FacultyManagement extends StatelessWidget {
 
           return Column(
             children: [
-              Padding(
+              Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FacultyRegisterScreen(),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Total Faculty: ${snapshot.data?.docs.length ?? 0}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add New Faculty'),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FacultyRegisterScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add New Faculty'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: snapshot.data?.docs.length ?? 0,
-                  itemBuilder: (context, index) {
-                    final faculty = snapshot.data!.docs[index];
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(faculty['name'] ?? ''),
-                      subtitle: Text(faculty['email'] ?? ''),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          // Delete faculty logic
+                child: snapshot.data!.docs.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No faculty members yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: snapshot.data?.docs.length ?? 0,
+                        itemBuilder: (context, index) {
+                          final faculty = snapshot.data!.docs[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(12),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                                child: Text(
+                                  (faculty['name'] as String).isNotEmpty
+                                      ? (faculty['name'] as String)[0]
+                                            .toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                faculty['name'] ?? '',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(faculty['email'] ?? ''),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: Colors.red[400],
+                                ),
+                                onPressed: () {
+                                  // Show confirmation dialog
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete Faculty'),
+                                      content: const Text(
+                                        'Are you sure you want to delete this faculty member?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            // Delete faculty logic
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                              color: Colors.red[400],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
                         },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           );
@@ -307,12 +579,32 @@ class StudentManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Students')),
+      appBar: AppBar(
+        title: const Text(
+          'Manage Students',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('students').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -321,34 +613,155 @@ class StudentManagement extends StatelessWidget {
 
           return Column(
             children: [
-              Padding(
+              Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to student registration screen
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add New Student'),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Total Students: ${snapshot.data?.docs.length ?? 0}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to student registration screen
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add New Student'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: snapshot.data?.docs.length ?? 0,
-                  itemBuilder: (context, index) {
-                    final student = snapshot.data!.docs[index];
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(student['name'] ?? ''),
-                      subtitle: Text(student['rollNumber'] ?? ''),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          // Delete student logic
+                child: snapshot.data!.docs.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.school_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No students registered yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: snapshot.data?.docs.length ?? 0,
+                        itemBuilder: (context, index) {
+                          final student = snapshot.data!.docs[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(12),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                                child: Text(
+                                  (student['name'] as String).isNotEmpty
+                                      ? (student['name'] as String)[0]
+                                            .toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                student['name'] ?? '',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(student['rollNumber'] ?? ''),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit,
+                                      color: Colors.blue[400],
+                                    ),
+                                    onPressed: () {
+                                      // Edit student logic
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete,
+                                      color: Colors.red[400],
+                                    ),
+                                    onPressed: () {
+                                      // Show confirmation dialog
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Student'),
+                                          content: const Text(
+                                            'Are you sure you want to delete this student?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                // Delete student logic
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                  color: Colors.red[400],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           );
@@ -364,7 +777,14 @@ class ClassMonitoring extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Class Monitoring')),
+      appBar: AppBar(
+        title: const Text(
+          'Class Monitoring',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('classes')
@@ -372,46 +792,59 @@ class ClassMonitoring extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.class_outlined, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No classes scheduled yet',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: snapshot.data?.docs.length ?? 0,
             itemBuilder: (context, index) {
               final classData = snapshot.data!.docs[index];
+              final isActive =
+                  DateTime.now().isAfter(
+                    DateTime.parse(classData['startTime']),
+                  ) &&
+                  DateTime.now().isBefore(DateTime.parse(classData['endTime']));
+
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  title: Text(classData['className'] ?? ''),
-                  subtitle: Text(
-                    'Faculty: ${classData['facultyName'] ?? ''}',
-                  ), // Changed from facultyName to faculty
-                  trailing: Text(
-                    DateTime.now().isAfter(
-                              DateTime.parse(classData['startTime']),
-                            ) &&
-                            DateTime.now().isBefore(
-                              DateTime.parse(classData['endTime']),
-                            )
-                        ? 'Active'
-                        : 'Finished',
-                    style: TextStyle(
-                      color:
-                          DateTime.now().isAfter(
-                                DateTime.parse(classData['startTime']),
-                              ) &&
-                              DateTime.now().isBefore(
-                                DateTime.parse(classData['endTime']),
-                              )
-                          ? Colors.green
-                          : Colors.red,
-                      fontSize: 15,
-                    ),
-                  ),
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
                   onTap: () {
                     Navigator.push(
                       context,
@@ -430,6 +863,92 @@ class ClassMonitoring extends StatelessWidget {
                       ),
                     );
                   },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    classData['className'] ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Faculty: ${classData['facultyName'] ?? ''}',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: (isActive ? Colors.green : Colors.red)
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: (isActive ? Colors.green : Colors.red)
+                                      .withOpacity(0.5),
+                                ),
+                              ),
+                              child: Text(
+                                isActive ? 'Active' : 'Finished',
+                                style: TextStyle(
+                                  color: isActive ? Colors.green : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 16,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${_formatDateTime(DateTime.parse(classData['startTime']))} - ${_formatTime(DateTime.parse(classData['endTime']))}',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -437,5 +956,13 @@ class ClassMonitoring extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${_formatTime(dateTime)}';
+  }
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
