@@ -155,6 +155,9 @@ lib/
 - Responsive UI design
 
 ## Contributing
+```
+https://github.com/Eshwar-ui/qr_attendance_system.git
+```
 
 Contributions are welcome! Please feel free to submit pull requests.
 
@@ -164,4 +167,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For support, please contact [support-email] or raise an issue in the repository.
+For support, please contact [srirameshwarchandra@gmail.com] or raise an issue in the repository.
