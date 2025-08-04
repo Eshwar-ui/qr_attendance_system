@@ -137,6 +137,141 @@ class ClassesProvider with ChangeNotifier {
     }
   }
 
+  /// Adds the student ID to the attendedStudentIds array for the given class
+  /// and adds the class ID to the attendedClassIds array for the student
+  ///
+  /// Call this when the student scans a QR code to mark attendance.
+  Future<void> markAttendance(String classId, String studentId) async {
+    try {
+      // Use a batch write to update both documents atomically
+      final batch = _firestore.batch();
+      
+      // Update class document
+      final classRef = _firestore.collection('classes').doc(classId);
+      batch.update(classRef, {
+        'attendedStudentIds': FieldValue.arrayUnion([studentId]),
+      });
+      
+      // Update student document
+      final studentRef = _firestore.collection('students').doc(studentId);
+      batch.update(studentRef, {
+        'attendedClassIds': FieldValue.arrayUnion([classId]),
+      });
+      
+      // Commit the batch
+      await batch.commit();
+      
+      print('Attendance marked for student $studentId in class $classId');
+    } catch (e) {
+      print('Error in markAttendance: $e');
+      _error = 'Failed to mark attendance: $e';
+      notifyListeners();
+      rethrow; // Re-throw so the UI can handle the error
+    }
+  }
+
+  /// Removes a student from a class attendance list
+  ///
+  /// Parameters:
+  /// - classId: ID of the class to remove student from
+  /// - studentId: ID of the student to remove
+  ///
+  /// This method removes the student from the class's attendedStudentIds
+  /// and removes the class from the student's attendedClassIds
+  Future<void> removeStudentFromClass(String classId, String studentId) async {
+    try {
+      // Use a batch write to update both documents atomically
+      final batch = _firestore.batch();
+      
+      // Update class document - remove student from attendedStudentIds
+      final classRef = _firestore.collection('classes').doc(classId);
+      batch.update(classRef, {
+        'attendedStudentIds': FieldValue.arrayRemove([studentId]),
+      });
+      
+      // Update student document - remove class from attendedClassIds
+      final studentRef = _firestore.collection('students').doc(studentId);
+      batch.update(studentRef, {
+        'attendedClassIds': FieldValue.arrayRemove([classId]),
+      });
+      
+      // Commit the batch
+      await batch.commit();
+      
+      print('Student $studentId removed from class $classId');
+    } catch (e) {
+      print('Error in removeStudentFromClass: $e');
+      _error = 'Failed to remove student from class: $e';
+      notifyListeners();
+      rethrow; // Re-throw so the UI can handle the error
+    }
+  }
+
+  /// Searches for a student by roll number
+  ///
+  /// Parameters:
+  /// - rollNumber: The roll number to search for
+  ///
+  /// Returns the student data if found, null otherwise
+  Future<Student?> searchStudentByRollNumber(String rollNumber) async {
+    try {
+      final QuerySnapshot snapshot = await _firestore
+          .collection('students')
+          .where('rollNumber', isEqualTo: rollNumber.trim())
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+
+      final doc = snapshot.docs.first;
+      return Student.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+    } catch (e) {
+      print('Error searching student: $e');
+      _error = 'Failed to search student: $e';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Manually adds a student to a class (opposite of removeStudentFromClass)
+  ///
+  /// Parameters:
+  /// - classId: ID of the class to add student to
+  /// - studentId: ID of the student to add
+  ///
+  /// This method adds the student to the class's attendedStudentIds
+  /// and adds the class to the student's attendedClassIds
+  Future<void> addStudentToClass(String classId, String studentId) async {
+    try {
+      // Use a batch write to update both documents atomically
+      final batch = _firestore.batch();
+      
+      // Update class document - add student to attendedStudentIds
+      final classRef = _firestore.collection('classes').doc(classId);
+      batch.update(classRef, {
+        'attendedStudentIds': FieldValue.arrayUnion([studentId]),
+      });
+      
+      // Update student document - add class to attendedClassIds
+      final studentRef = _firestore.collection('students').doc(studentId);
+      batch.update(studentRef, {
+        'attendedClassIds': FieldValue.arrayUnion([classId]),
+      });
+      
+      // Commit the batch
+      await batch.commit();
+      
+      print('Student $studentId added to class $classId');
+    } catch (e) {
+      print('Error in addStudentToClass: $e');
+      _error = 'Failed to add student to class: $e';
+      notifyListeners();
+      rethrow; // Re-throw so the UI can handle the error
+    }
+  }
+
   /// Clears any error message and notifies listeners
   void clearError() {
     _error = null;

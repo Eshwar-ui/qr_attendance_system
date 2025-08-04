@@ -566,7 +566,7 @@ class _StudentDashboardState extends State<StudentDashboard>
     );
   }
 
-  Future<void> _handleQRCode(String classId) async {
+  Future<void> _handleQRCode(String qrData) async {
     if (!mounted) return;
 
     try {
@@ -580,6 +580,9 @@ class _StudentDashboardState extends State<StudentDashboard>
         _showMessage('User not authenticated');
         return;
       }
+
+      // Use the QR data as classId (it should be just the classId)
+      final String classId = qrData.trim();
 
       // First, get class details outside the transaction
       final classDoc = await FirebaseFirestore.instance

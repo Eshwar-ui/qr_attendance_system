@@ -858,6 +858,9 @@ class ClassMonitoring extends StatelessWidget {
                             id: classData.id,
                             subject: classData['subject'] ?? '',
                             createdAt: DateTime.parse(classData['createdAt']),
+                            attendedStudentIds: List<String>.from(
+                              classData['attendedStudentIds'] ?? [],
+                            ),
                           ),
                         ),
                       ),
