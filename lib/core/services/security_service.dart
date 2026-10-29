@@ -2,12 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 
-enum QRValidationResult {
-  valid,
-  tooEarly,
-  tooLate,
-  invalid,
-}
+enum QRValidationResult { valid, tooEarly, tooLate, invalid }
 
 class SecurityService {
   static final SecurityService _instance = SecurityService._internal();
@@ -22,7 +17,7 @@ class SecurityService {
   }) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final expiryTimestamp = expiry.millisecondsSinceEpoch;
-    
+
     final data = {
       'classId': classId,
       'facultyId': facultyId,
@@ -30,10 +25,10 @@ class SecurityService {
       'expiry': expiryTimestamp,
       'nonce': _generateNonce(),
     };
-    
+
     final jsonData = json.encode(data);
     final signature = _generateSignature(jsonData);
-    
+
     return base64Encode(utf8.encode('$jsonData|$signature'));
   }
 
@@ -42,21 +37,21 @@ class SecurityService {
     try {
       final decoded = utf8.decode(base64Decode(qrData));
       final parts = decoded.split('|');
-      
+
       if (parts.length != 2) return null;
-      
+
       final jsonData = parts[0];
       final signature = parts[1];
-      
+
       // Verify signature
       if (!_verifySignature(jsonData, signature)) return null;
-      
+
       final data = json.decode(jsonData) as Map<String, dynamic>;
-      
+
       // Check expiry
       final expiry = DateTime.fromMillisecondsSinceEpoch(data['expiry']);
       if (DateTime.now().isAfter(expiry)) return null;
-      
+
       return data;
     } catch (e) {
       return null;
@@ -64,10 +59,13 @@ class SecurityService {
   }
 
   // Check if QR code is within valid attendance marking window (10 minutes from class start)
-  QRValidationResult validateAttendanceWindow(String classId, DateTime classStartTime) {
+  QRValidationResult validateAttendanceWindow(
+    String classId,
+    DateTime classStartTime,
+  ) {
     final now = DateTime.now();
-    final validWindow = classStartTime.add(const Duration(minutes: 10));
-    
+    final validWindow = classStartTime.add(const Duration(minutes: 5));
+
     if (now.isBefore(classStartTime)) {
       // Class hasn't started yet
       return QRValidationResult.tooEarly;
